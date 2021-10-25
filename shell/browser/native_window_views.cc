@@ -740,6 +740,13 @@ void NativeWindowViews::SetContentSizeConstraints(
 }
 
 void NativeWindowViews::SetResizable(bool resizable) {
+  SetCanResize(resizable_);
+  // In response to call to SetCanResize chromium sets proper window
+  // style but it doesn't send message SWP_FRAMECHANGED which updates
+  // the cache.
+  ::SetWindowPos(GetAcceleratedWidget(), 0, 0, 0, 0, 0,  // ignored
+                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                     SWP_NOACTIVATE | SWP_NOOWNERZORDER);
   if (resizable != resizable_) {
     // On Linux there is no "resizable" property of a window, we have to set
     // both the minimum and maximum size to the window size to achieve it.
@@ -754,12 +761,7 @@ void NativeWindowViews::SetResizable(bool resizable) {
           extensions::SizeConstraints(content_size, content_size));
     }
   }
-#if defined(OS_WIN)
-  if (has_frame() && thick_frame_)
-    FlipWindowStyle(GetAcceleratedWidget(), resizable, WS_THICKFRAME);
-#endif
   resizable_ = resizable;
-  SetCanResize(resizable_);
 }
 
 bool NativeWindowViews::MoveAbove(const std::string& sourceId) {
